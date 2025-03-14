@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: BESS Fan Data API
+  description: API to fetch fan test data and retrieve PDF links from the BESS website.
+  version: 1.1.0
+servers:
+  - url: https://bess-api.onrender.com
+    description: Public API Server
+paths:
+  /bess-data:
+    get:
+      operationId: getBessData
+      summary: Fetch fan test data for 50Hz or 60Hz
+      description: Retrieves a paginated list of fan test results.
+      parameters:
+        - name: frequency
+          in: query
+          required: true
+          description: Specify '50' or '60' for fan test frequency.
+          schema:
+            type: string
+            enum: ["50", "60"]
+        - name: limit
+          in: query
+          required: false
+          description: Number of results to return (default: 10)
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          description: Number of results to skip (default: 0)
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Successfully retrieved paginated fan test data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_records:
+                    type: integer
+                    description: Total number of records available.
+                  returned_records:
+                    type: integer
+                    description: Number of records returned in this request.
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        frequency:
+                          type: string
+                        manufacturer:
+                          type: string
+                        power:
+                          type: string
+                        test_pdf:
+                          type: string
+                          format: uri
+                          description: URL to the test PDF file.
+                        test_id:
+                          type: string
+                        model:
+                          type: string
+                        size:
+                          type: string
+                        cone:
+                          type: string
+                        shutter:
+                          type: string
+                        airflow_0.05_sp:
+                          type: string
+                        ver_0.05_sp:
+                          type: string
+                        airflow_0.10_sp:
+                          type: string
+                        ver_0.10_sp:
+                          type: string
+                        airflow_ratio:
+                          type: string
+        "400":
+          description: Invalid frequency parameter.
+        "500":
+          description: Internal server error.
+
+  /bess-pdf:
+    get:
+      operationId: getBessPdf
+      summary: Retrieve a PDF link for a specific fan test.
+      description: Fetches the direct PDF report link for a given test ID.
+      parameters:
+        - name: test_id
+          in: query
+          required: true
+          description: The test ID to fetch the corresponding PDF link.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully retrieved PDF link.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  test_id:
+                    type: string
+                  pdf_link:
+                    type: string
+                    format: uri
+                    description: Direct URL to the test PDF file.
+        "404":
+          description: Test ID not found.
+        "500":
+          description: Internal server error.
