@@ -2,7 +2,6 @@ from fastapi import FastAPI, Query
 from bs4 import BeautifulSoup
 import requests
 import urllib.parse
-import pandas as pd
 import time
 
 app = FastAPI()
@@ -110,8 +109,13 @@ def scrape_fan_data(frequency, power_options):
     return all_data
 
 @app.get("/bess-data")
-def get_bess_data(frequency: str = Query(..., description="Specify '50' or '60' for Hz")):
-    """API endpoint to get BESS fan test data."""
+def get_bess_data(
+    frequency: str = Query(..., description="Specify '50' or '60' for Hz"),
+    limit: int = Query(10, description="Number of results to return"),
+    offset: int = Query(0, description="Skip first N results"),
+):
+    """API endpoint to get BESS fan test data with pagination."""
+    
     if frequency not in ["50", "60"]:
         return {"error": "Invalid frequency. Use '50' or '60'."}
 
@@ -122,7 +126,15 @@ def get_bess_data(frequency: str = Query(..., description="Specify '50' or '60' 
     power_options = get_power_options(response_search)
     fan_data = scrape_fan_data(frequency, power_options)
 
-    return {"data": fan_data}
+    # ✅ Apply pagination
+    total_records = len(fan_data)
+    fan_data = fan_data[offset : offset + limit]
+
+    return {
+        "total_records": total_records,
+        "returned_records": len(fan_data),
+        "data": fan_data,
+    }
 
 @app.get("/bess-pdf")
 def get_test_pdf(test_id: str = Query(..., description="Test ID to fetch the corresponding PDF link")):
@@ -139,4 +151,3 @@ def get_test_pdf(test_id: str = Query(..., description="Test ID to fetch the cor
             return {"test_id": test_id, "pdf_link": test["test_pdf"]}
 
     return {"error": "Test ID not found."}
-
